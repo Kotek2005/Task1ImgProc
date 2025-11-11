@@ -50,7 +50,8 @@ def doHistogram(filenamen,param):
     makeImage(histimg,f"histogram_{filenamen}")
     return hist_raw
 
-def doHPower(filenamen):
+
+def doHPower(filenamen,g1,g2):
     col = 0
     hist = np.zeros(256)
     histr = np.zeros(256)
@@ -70,8 +71,8 @@ def doHPower(filenamen):
         histr = doHistogram(filenamen,0)
         histg = doHistogram(filenamen,1)
         histb = doHistogram(filenamen,2)
-    gmin = np.cbrt(0)
-    gmax = np.cbrt(255)
+    gmin = np.cbrt(g1)
+    gmax = np.cbrt(g2)
     pixelcount = arr.shape[0] * arr.shape[1]
     result = np.zeros_like(arr)
     if(col==0):
@@ -304,17 +305,20 @@ if (len(sys.argv) == 2) & (sys.argv[1] != '--help'):
     print("Too few command line parameters given.\n")
     sys.exit()
 param = None
+param2 = None
+
 
 command = sys.argv[1]
 filenamen = sys.argv[2]
 if len(sys.argv) > 3:
     param = int(sys.argv[3])
-
+if len(sys.argv) > 4:
+    param2 = int(sys.argv[4])
 
 if command == '--histogram':
    doHistogram(filenamen,param)
 elif command == '--hpower':
-   doHPower(filenamen)
+   doHPower(filenamen,param,param2)
 elif command == '--cmean':
     doMean(filenamen)
 elif command == '--cvariance':
