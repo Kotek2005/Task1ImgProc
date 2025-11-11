@@ -281,6 +281,21 @@ def doExtractionOfDetailsIOptimization(filename):
     result = end-start
     print("Czas :" + str(result))
 
+def doRobertsOperatorII(filename):
+    arrBasic = makeArray(filename)
+    arr = np.pad(arrBasic, 1, "edge")
+    height,width = arrBasic.shape
+    newarr = np.zeros_like(arrBasic,dtype=float)
+
+    for y in range(1,height+1):
+        for x in range(1,width+1):
+            region = arr[y-1:y+1,x-1:x+1]
+            value = abs(region[0][0] - region[1][1]) + abs(region[0][1] - region[1][0])
+            newarr[y-1,x-1] = value
+    output_path = f"result_{filename}"
+    makeImage(newarr, output_path)
+
+
 if len(sys.argv) == 1:
     print("No command line parameters given.\n")
     sys.exit()
@@ -320,3 +335,5 @@ elif command == '--sexdeti':
     doExtractionOfDetailsIUniversial(filenamen)
 elif command == '--sexdetiOpt':
     doExtractionOfDetailsIOptimization(filenamen)
+elif command == '--orobertsii':
+    doRobertsOperatorII(filenamen)
