@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import sys
+import os
 
 def makeArray(image):
     im = Image.open(image)
@@ -160,6 +161,57 @@ def doEntropy(filenamen):
     print(f"Entropy = {ent}")
     return ent
 
+def doExtractionOfDetailsIUniversial(filename):
+    arrBasic = makeArray(filename)
+
+    N = np.array([[1, 1, -1],
+                  [1, -2, -1],
+                  [1, 1, -1]])
+
+    NE = np.array([[1, -1, -1],
+                   [1, -2, -1],
+                   [1, 1, 1]])
+
+    E = np.array([[-1, -1, -1],
+                  [1, -2, 1],
+                  [1, 1, 1]])
+
+    SE = np.array([[-1, -1, 1],
+                   [-1, -2, 1],
+                   [1, 1, 1]])
+
+    masks = {'N': N, 'NE': NE, 'E': E, 'SE': SE}
+
+    mask_size = next(iter(masks.values())).shape[0]
+    pad_size = mask_size // 2
+
+    arr = np.pad(arrBasic,pad_size,"edge") #tu po prostu dodałem ramkę o szerokości x żeby się nic nie spierdzieliło
+    height,width = arrBasic.shape
+
+    results = {}
+    for key in masks.keys():
+        results[key] = np.zeros_like(arrBasic)
+
+    mask_size = next(iter(masks.values())).shape[0]
+    offset = mask_size // 2
+
+    for i in range(offset, height + offset):
+        for j in range(offset, width + offset):
+            region = arr[i - offset:i + offset+1, j-offset : j+offset+1]
+            for key, kernel in masks.items():
+                results[key][i-offset, j-offset] = np.sum(region * kernel)
+
+    list_of_results = [np.abs(r) for r in results.values()]
+    newarr = np.maximum.reduce(list_of_results)
+
+    newarr = np.clip(newarr, 0, 255).astype(np.uint8)
+
+    output_path = f"result_{filename}"
+    makeImage(newarr, output_path)
+
+    #abs_path = os.path.abspath(output_path)
+    #print("path: "+abs_path)
+
 if len(sys.argv) == 1:
     print("No command line parameters given.\n")
     sys.exit()
@@ -195,3 +247,5 @@ elif command == '--cvarcoii':
     doVariationCoeffTwo(filenamen)
 elif command == '--centropy':
     doEntropy(filenamen)
+elif command == '--sexdeti':
+    doExtractionOfDetailsIUniversial(filenamen)
