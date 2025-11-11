@@ -163,7 +163,7 @@ def doEntropy(filenamen):
     print(f"Entropy = {ent}")
     return ent
 
-def doExtractionOfDetailsIUniversial(filename):
+def doExtractionOfDetailsIUniversialAllMasks(filename):
     start = time.time()
     arrBasic = makeArray(filename)
 
@@ -221,6 +221,51 @@ def doExtractionOfDetailsIUniversial(filename):
 def doExtractionOfDetailsIOptimization(filename):
     start = time.time()
     arrBasic = makeArray(filename)
+    newarr = np.zeros_like(arrBasic, dtype=float)
+
+
+    N = np.array([[1, 1, -1],
+                  [1, -2, -1],
+                  [1, 1, -1]])
+
+    mask_size = N.shape[0]
+    pad_size = 1
+
+    arr = np.pad(arrBasic,pad_size,"edge") #tu po prostu dodałem ramkę o szerokości x żeby się nic nie spierdzieliło
+    height,width = arrBasic.shape
+
+
+    for i in range(pad_size, height + pad_size):
+        for j in range(pad_size, width + pad_size):
+            region = arr[i - pad_size:i + pad_size+1, j-pad_size : j+pad_size+1]
+            value = 0.0
+            for x in range(3):
+                for y in range(3):
+                    k = N[x,y]
+                    if k == 1:
+                        value += region[x, y]
+                    elif k == -1:
+                        value -= region[x, y]
+                    else:
+                        value += region[x, y] * N[x,y]
+            newarr[i-pad_size,j-pad_size] = value
+
+    newarr = np.clip(newarr, 0, 255).astype(np.uint8)
+
+    output_path = f"result_{filename}"
+    makeImage(newarr, output_path)
+
+    #abs_path = os.path.abspath(output_path)
+    #print("path: "+abs_path)
+    end = time.time()
+    result = end-start
+    print("Czas :" + str(result))
+
+def doExtractionOfDetailsIUniversial(filename,m):
+    start = time.time()
+    arrBasic = makeArray(filename)
+    newarr = np.copy(arrBasic)
+
 
     N = np.array([[1, 1, -1],
                   [1, -2, -1],
@@ -240,38 +285,29 @@ def doExtractionOfDetailsIOptimization(filename):
 
     masks = {'N': N, 'NE': NE, 'E': E, 'SE': SE}
 
-    mask_size = next(iter(masks.values())).shape[0]
+    if m not in masks:
+        print("Unkown mask")
+        return
+    k = masks[m]
+
+    mask_size = k.shape[0]
     pad_size = mask_size // 2
 
-    arr = np.pad(arrBasic,pad_size,"edge") #tu po prostu dodałem ramkę o szerokości x żeby się nic nie spierdzieliło
+    arr = np.pad(arrBasic,pad_size,"edge")
     height,width = arrBasic.shape
 
-    results = {}
-    for key in masks.keys():
-        results[key] = np.zeros_like(arrBasic)
+    for i in range(pad_size, height + pad_size):
+        for j in range(pad_size, width + pad_size):
+            region = arr[i - pad_size:i + pad_size+1, j-pad_size : j+pad_size+1]
+            value = 0
+            for x in range(mask_size):
+                for y in range(mask_size):
+                    value += region[x, y] * k[x, y]
+            newarr[i-pad_size,j-pad_size] = value
 
-    offset = mask_size // 2
-
-    for i in range(offset, height + offset):
-        for j in range(offset, width + offset):
-            region = arr[i - offset:i + offset+1, j-offset : j+offset+1]
-            for key, kernel in masks.items():
-                value = 0.0
-                for x in range(mask_size):
-                    for y in range(mask_size):
-                        k = kernel[x, y]
-                        if k == 1:
-                            value += region[x, y]
-                        elif k == -1:
-                            value -= region[x, y]
-                        else:
-                            value += region[x, y] * k
-                results[key][i - offset, j - offset] = value
-
-    list_of_results = [np.abs(r) for r in results.values()]
-    newarr = np.maximum.reduce(list_of_results)
-
-    newarr = np.clip(newarr, 0, 255).astype(np.uint8)
+    newarr = np.abs(newarr)
+    newarr = (newarr / newarr.max()) * 255
+    newarr = newarr.astype(np.uint8)
 
     output_path = f"result_{filename}"
     makeImage(newarr, output_path)
@@ -311,7 +347,7 @@ param2 = None
 command = sys.argv[1]
 filenamen = sys.argv[2]
 if len(sys.argv) > 3:
-    param = int(sys.argv[3])
+    param = sys.argv[3]
 if len(sys.argv) > 4:
     param2 = int(sys.argv[4])
 
@@ -336,7 +372,7 @@ elif command == '--cvarcoii':
 elif command == '--centropy':
     doEntropy(filenamen)
 elif command == '--sexdeti':
-    doExtractionOfDetailsIUniversial(filenamen)
+    doExtractionOfDetailsIUniversial(filenamen,str(param))
 elif command == '--sexdetiOpt':
     doExtractionOfDetailsIOptimization(filenamen)
 elif command == '--orobertsii':
