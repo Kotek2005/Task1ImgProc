@@ -188,7 +188,7 @@ def doExtractionOfDetailsIUniversialAllMasks(filename):
     mask_size = next(iter(masks.values())).shape[0]
     pad_size = mask_size // 2
 
-    arr = np.pad(arrBasic,pad_size,"edge") #tu po prostu dodałem ramkę o szerokości x żeby się nic nie spierdzieliło
+    arr = np.pad(arrBasic,pad_size,"edge")
     height,width = arrBasic.shape
 
     results = {}
@@ -231,7 +231,7 @@ def doExtractionOfDetailsIOptimization(filename):
     mask_size = N.shape[0]
     pad_size = 1
 
-    arr = np.pad(arrBasic,pad_size,"edge") #tu po prostu dodałem ramkę o szerokości x żeby się nic nie spierdzieliło
+    arr = np.pad(arrBasic,pad_size,"edge")
     height,width = arrBasic.shape
 
 
