@@ -219,7 +219,8 @@ def doExtractionOfDetailsIUniversialAllMasks(filename):
     print("Czas: " + str(result))
 
 def doExtractionOfDetailsIOptimization(filename):
-    start = time.time()
+    print(f"Function doExtractionOfDetailsOptimized invoked for {filenamen}")
+
     arrBasic = makeArray(filename)
     newarr = np.zeros_like(arrBasic, dtype=float)
 
@@ -233,8 +234,7 @@ def doExtractionOfDetailsIOptimization(filename):
 
     arr = np.pad(arrBasic,pad_size,"edge")
     height,width = arrBasic.shape
-
-
+    start = time.time()
     for i in range(pad_size, height + pad_size):
         for j in range(pad_size, width + pad_size):
             region = arr[i - pad_size:i + pad_size+1, j-pad_size : j+pad_size+1]
@@ -251,17 +251,18 @@ def doExtractionOfDetailsIOptimization(filename):
             newarr[i-pad_size,j-pad_size] = value
 
     newarr = np.clip(newarr, 0, 255).astype(np.uint8)
-
+    end = time.time()
     output_path = f"result_{filename}"
     makeImage(newarr, output_path)
 
     #abs_path = os.path.abspath(output_path)
     #print("path: "+abs_path)
-    end = time.time()
+
     result = end-start
     print("Czas :" + str(result))
 
 def doExtractionOfDetailsIUniversial(filename,m):
+    print(f"Function doExtractionOfDetails invoked for {filenamen} for mask {m}")
     start = time.time()
     arrBasic = makeArray(filename)
     newarr = np.copy(arrBasic)
@@ -319,6 +320,7 @@ def doExtractionOfDetailsIUniversial(filename,m):
     print("Czas :" + str(result))
 
 def doRobertsOperatorII(filename):
+    print(f"Function doRobertsOperatorII invoked for {filenamen}")
     arrBasic = makeArray(filename)
     arr = np.pad(arrBasic, 1, "edge")
     height,width = arrBasic.shape
@@ -354,7 +356,7 @@ if len(sys.argv) > 4:
 if command == '--histogram':
    doHistogram(filenamen,param)
 elif command == '--hpower':
-   doHPower(filenamen,param,param2)
+   doHPower(filenamen,int(param),param2)
 elif command == '--cmean':
     doMean(filenamen)
 elif command == '--cvariance':
