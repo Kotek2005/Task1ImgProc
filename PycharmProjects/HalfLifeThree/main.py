@@ -38,13 +38,13 @@ def doDilation(filename):
         makeImage(out, f"dilated_{filename}")
     return out
 
-#def doDilationTwo(arr,x,y):
+def doDilationTwo(arr,x,y,iter):
     arrnew = np.pad(arr, 1, "edge")
     arrnew = arrnew > 0
     SE = np.ones((3, 3), dtype=np.uint8)
-    out = np.zeros_like(arr)
-    for i in range(1, arrnew.shape[0]-1):
-        for j in range(1, arrnew.shape[1]-1):
+    out = np.copy(arr)
+    for i in range(x-iter, x+1+iter):
+        for j in range(y-iter, y+1+iter):
             region = arrnew[i-1:i+2, j-1:j+2]
             if np.any(region & SE):
                 out[i-1,j-1] = 1
@@ -119,19 +119,23 @@ def doHitOrMiss(filename):
     makeImage(outim, f"hit_or_miss_{filename}")
     return out
 
-#def doEmThree(filename,x,y):
+def doEmThree(filename,x,y):
     print(f"Function doM3 invoked for {filename}")
     arr = makeArray(filename)
     arrnew = arr > 0
     arrnew[x,y] = True
+    iter = 1
 
     while True:
+
         arrold = arrnew.copy()
-        arrdil = doDilationTwo(arrnew,x,y)
+        arrdil = doDilationTwo(arrnew,x,y,iter)
         arrnew = arrdil & (arr>0)
+        iter += 1
         if np.array_equal(arrnew, arrold):
             break
 
+    print(iter)
     makeImage(arrnew, f"emThree_{filename}")
 
 
