@@ -43,13 +43,18 @@ def doDilationTwo(arr,x,y,iter):
     arrnew = arrnew > 0
     SE = np.ones((3, 3), dtype=np.uint8)
     out = np.copy(arr)
-    for i in range(x-iter, x+1+iter):
-        for j in range(y-iter, y+1+iter):
-            region = arrnew[i-1:i+2, j-1:j+2]
-            if np.any(region & SE):
-                out[i-1,j-1] = 1
-            else:
-                out[i-1,j-1] = 0
+    print(x)
+    print(y)
+    print(iter)
+    if((x-iter>0) & (y-iter>0) & (x+1+iter<512) & (y+1+iter<512)):
+        for i in range(x-iter, x+1+iter):
+            for j in range(y-iter, y+1+iter):
+                region = arrnew[i-1:i+2, j-1:j+2]
+                print(f"{i},{j}")
+                if np.any(region & SE):
+                    out[i,j] = 1
+                else:
+                    out[i,j] = 0
 
     return out
 
