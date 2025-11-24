@@ -42,25 +42,48 @@ def doDilationTwo(arr,x,y,iter):
     arr = arr > 0
     SE = np.ones((3, 3), dtype=np.uint8)
     out = np.copy(arr)
-    print(iter)
+    #print(iter)
     for i in range(max(1,x-iter), min(511,x+1+iter)):
         for j in range(max(1,y-iter), min(511,y+1+iter)):
             if (i==x-iter or i==x+iter or j==y-iter or j==y+iter):
                 region = arr[i-1:i+2, j-1:j+2]
-                print(f"{j},{i}")
+                #print(f"{j},{i}")
                 if np.any(region & SE):
                     out[i,j] = 1
     return out
 
 def doDilationFrontier(arr, frontier):
     new_pixels = set()
-    H, W = arr.shape
+    y, x = arr.shape
 
     for (i, j) in frontier:
-        for ni in range(max(0, i-1), min(H, i+2)):
-            for nj in range(max(0, j-1), min(W, j+2)):
-                if not arr[ni, nj]:
-                    new_pixels.add((ni, nj))
+        for k in range(max(0, i-1), min(y, i+2)):
+            for l in range(max(0, j-1), min(x, j+2)):
+                if not arr[k, l]:
+                    new_pixels.add((k, l))
+
+    return new_pixels
+
+def doDilationFrontierFlex(arr, frontier):
+    SE = np.array([[0,1,0],
+               [1,1,1],
+               [0,1,0]], dtype=np.uint8)
+    new_pixels = set()
+    y, x = arr.shape
+
+    for (i, j) in frontier:
+        for k in range(-1, 2):
+            for l in range(-1, 2):
+                # Only process if SE allows this direction
+                if SE[k+1, l+1] == 0:
+                    continue
+
+                ni = i + k
+                nj = j + l
+
+                if 0 <= ni < y and 0 <= nj < x:
+                    if not arr[ni, nj]:
+                        new_pixels.add((ni, nj))
 
     return new_pixels
 
@@ -170,6 +193,29 @@ def doEmThreeGPT(filename, x, y):
 
     makeImage(arrnew, f"emThree_{filename}")
 
+def doRegionGrowingMultiSeeds(filename):
+    print(f"Function doRegionGrowing invoked for {filename}")
+    arr = makeArray(filename) > 0
+    arrnew = np.zeros_like(arr, dtype=bool)
+    frontier = set()
+
+    seed_points = {(400, 200), (300, 500)}
+
+    for (y, x) in seed_points:
+        arrnew[x, y] = True
+        frontier.add((x, y))
+
+    while frontier:
+        new_frontier = doDilationFrontierFlex(arrnew, frontier)
+        new_frontier = {p for p in new_frontier if arr[p] and not arrnew[p]}
+
+        for p in new_frontier:
+            arrnew[p] = True
+
+        frontier = new_frontier
+
+    makeImage(arrnew, f"regionGrown_{filename}")
+
 if len(sys.argv) == 1:
     print("No command line parameters given.\n")
     sys.exit()
@@ -201,4 +247,5 @@ elif command == '--m3':
     doEmThree(filenamen,int(param2),int(param))
 elif command == '--m3g':
     doEmThreeGPT(filenamen,int(param2),int(param))
-
+elif command == '--regrow':
+    doRegionGrowingMultiSeeds(filenamen)
