@@ -39,24 +39,30 @@ def doDilation(filename):
     return out
 
 def doDilationTwo(arr,x,y,iter):
-    arrnew = np.pad(arr, 1, "edge")
-    arrnew = arrnew > 0
+    arr = arr > 0
     SE = np.ones((3, 3), dtype=np.uint8)
     out = np.copy(arr)
-    print(x)
-    print(y)
     print(iter)
-    if((x-iter>0) & (y-iter>0) & (x+1+iter<512) & (y+1+iter<512)):
-        for i in range(x-iter, x+1+iter):
-            for j in range(y-iter, y+1+iter):
-                region = arrnew[i-1:i+2, j-1:j+2]
-                print(f"{i},{j}")
+    for i in range(max(1,x-iter), min(511,x+1+iter)):
+        for j in range(max(1,y-iter), min(511,y+1+iter)):
+            if (i==x-iter or i==x+iter or j==y-iter or j==y+iter):
+                region = arr[i-1:i+2, j-1:j+2]
+                print(f"{j},{i}")
                 if np.any(region & SE):
                     out[i,j] = 1
-                else:
-                    out[i,j] = 0
-
     return out
+
+def doDilationFrontier(arr, frontier):
+    new_pixels = set()
+    H, W = arr.shape
+
+    for (i, j) in frontier:
+        for ni in range(max(0, i-1), min(H, i+2)):
+            for nj in range(max(0, j-1), min(W, j+2)):
+                if not arr[ni, nj]:
+                    new_pixels.add((ni, nj))
+
+    return new_pixels
 
 def doErosion(filename):
     if isinstance(filename, str):
@@ -127,7 +133,8 @@ def doHitOrMiss(filename):
 def doEmThree(filename,x,y):
     print(f"Function doM3 invoked for {filename}")
     arr = makeArray(filename)
-    arrnew = arr > 0
+    arr = arr > 0
+    arrnew = np.zeros_like(arr)
     arrnew[x,y] = True
     iter = 1
 
@@ -143,7 +150,25 @@ def doEmThree(filename,x,y):
     print(iter)
     makeImage(arrnew, f"emThree_{filename}")
 
+def doEmThreeGPT(filename, x, y):
+    print(f"Function doM3GPT invoked for {filename}")
+    arr = makeArray(filename) > 0
+    arrnew = np.zeros_like(arr, dtype=bool)
+    arrnew[x, y] = True
 
+    frontier = {(x, y)}
+
+    while frontier:
+        new_frontier = doDilationFrontier(arrnew, frontier)
+
+        new_frontier = {p for p in new_frontier if arr[p]}
+
+        for p in new_frontier:
+            arrnew[p] = True
+
+        frontier = new_frontier
+
+    makeImage(arrnew, f"emThree_{filename}")
 
 if len(sys.argv) == 1:
     print("No command line parameters given.\n")
@@ -173,5 +198,7 @@ elif command == '--close':
 elif command == '--hmt':
     doHitOrMiss(filenamen)
 elif command == '--m3':
-    doEmThree(filenamen,int(param),int(param2))
+    doEmThree(filenamen,int(param2),int(param))
+elif command == '--m3g':
+    doEmThreeGPT(filenamen,int(param2),int(param))
 
