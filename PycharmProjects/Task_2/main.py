@@ -319,8 +319,56 @@ def doExtractionOfDetailsIUniversial(filename,m):
     result = end-start
     print("Czas :" + str(result))
 
+def doExtractionOfDetailsOptWorking(filename):
+    print(f"Function doExtractionOfDetailsWorking invoked for {filename}")
+    arrBasic = makeArray(filename)
+    newarr = np.zeros_like(arrBasic, dtype=float)
+
+    N = np.array([[1, 1, -1],
+                  [1, -2, -1],
+                  [1, 1, -1]])
+
+    mask_size = N.shape[0]
+    pad_size = 1
+
+    arr = np.pad(arrBasic, pad_size, "edge")
+    height, width = arrBasic.shape
+    start = time.time()
+
+    for i in range(pad_size, height + pad_size):
+        for j in range(pad_size, width + pad_size):
+            value = 0
+            value += arr[i - 1, j - 1]
+            value += arr[i, j - 1]
+            value += arr[i + 1, j - 1]
+
+            value += arr[i - 1, j]
+            value += -2 * arr[i , j ]
+            value += arr[i  + 1, j]
+
+            value -= arr[i - 1, j + 1]
+            value -= arr[i , j + 1]
+            value -= arr[i + 1, j + 1]
+
+            newarr[i - 1, j - 1]  = value
+
+
+    #newarr = np.abs(newarr)
+    newarr = np.clip(newarr, 0, 255).astype(np.uint8)
+    #newarr = (newarr / newarr.max()) * 255
+    #newarr = newarr.astype(np.uint8)
+
+    output_path = f"resultW_{filename}"
+    makeImage(newarr, output_path)
+
+    #abs_path = os.path.abspath(output_path)
+    #print("path: "+abs_path)
+    end = time.time()
+    result = end-start
+    print("Czas :" + str(result))
+
 def doRobertsOperatorII(filename):
-    print(f"Function doRobertsOperatorII invoked for {filenamen}")
+    print(f"Function doRobertsOperatorII invoked for {filename}")
     arrBasic = makeArray(filename)
     arr = np.pad(arrBasic, 1, "edge")
     height,width = arrBasic.shape
@@ -379,3 +427,5 @@ elif command == '--sexdetiOpt':
     doExtractionOfDetailsIOptimization(filenamen)
 elif command == '--orobertsii':
     doRobertsOperatorII(filenamen)
+elif command == '--sexdetiOptW':
+    doExtractionOfDetailsOptWorking(filenamen)
