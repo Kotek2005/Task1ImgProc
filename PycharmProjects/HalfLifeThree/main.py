@@ -8,6 +8,12 @@ def makeArray(image):
     arr = arr.reshape(im.size[1], im.size[0])
     return arr
 
+def makeArrayG(image):
+    im = Image.open(image)
+    arr = np.array(im.getdata())
+    arr = arr.reshape(im.size[1], im.size[0])
+    return arr
+
 def makeImage(arr, name):
 
     import numpy as np
@@ -201,9 +207,6 @@ def doEmThreeO(filename, x, y):
 def doEmThreeCheckEd(arr, x1, y1, x2, y2):
     check_mask = np.zeros_like(arr, dtype=bool)
 
-    if not arr[y1, x1]:
-        return False
-
     check_mask[y1, x1] = True
 
     frontier = {(x1, y1)}
@@ -301,6 +304,117 @@ def doRegionGrowingMultiSeedsCheck(filename):
 
     return merged
 
+
+def doRegionGrowingMultiSeedsCheckGrayscale(filename, tolerance):
+    print(f"Function doRegionGrowing Grayscale invoked for {filename}")
+
+    img_gray = makeArrayG(filename)
+
+    arrnew = np.zeros_like(img_gray, dtype=bool)
+
+    s1x = 100
+    s1y = 100
+    s2x = 450
+    s2y = 450
+    seed_points = [(s1x, s1y), (s2x, s2y)]
+
+    seed_intensities = []
+    frontier = set()
+
+    for (x, y) in seed_points:
+        if 0 <= y < img_gray.shape[0] and 0 <= x < img_gray.shape[1]:
+            arrnew[y, x] = True
+            frontier.add((x, y))
+            seed_intensities.append(img_gray[y, x])
+
+    ref_value = np.mean(seed_intensities)
+
+    while frontier:
+        new_frontier = doDilationFrontierFlex(arrnew, frontier)
+
+        valid_frontier = set()
+        for (nx, ny) in new_frontier:
+
+            pixel_val = int(img_gray[ny, nx])
+            ref_val = int(ref_value)
+
+            if abs(pixel_val - ref_val) <= tolerance:
+                if not arrnew[ny, nx]:
+                    valid_frontier.add((nx, ny))
+
+        for (nx, ny) in valid_frontier:
+            arrnew[ny, nx] = True
+
+        frontier = valid_frontier
+
+    makeImage(arrnew, f"regionGrownCh_Gray_{filename}")
+
+    merged = doEmThreeCheckEd(arrnew, s1x, s1y, s2x, s2y)
+
+    if merged:
+        print("The regions merged")
+    else:
+        print("The regions cannot merge")
+
+    return merged
+
+
+def doRegionGrowingLocal(filename, tolerance):
+    print(f"Function doRegionGrowing Local invoked for {filename}")
+
+    img_gray = makeArrayG(filename)
+
+    arrnew = np.zeros_like(img_gray, dtype=bool)
+    height, width = img_gray.shape
+
+    s1x, s1y = 100, 100
+    s2x, s2y = 450, 450
+    seed_points = [(s1x, s1y), (s2x, s2y)]
+
+    frontier = set()
+
+    for (x, y) in seed_points:
+        if 0 <= y < height and 0 <= x < width:
+            arrnew[y, x] = True
+            frontier.add((x, y))
+
+    neighbor_offsets = [(-1, -1), (0, -1), (1, -1),
+                        (-1, 0), (1, 0),
+                        (-1, 1), (0, 1), (1, 1)]
+
+    while frontier:
+        new_frontier = set()
+
+        for (cx, cy) in frontier:
+
+            parent_value = int(img_gray[cy, cx])
+
+            for dx, dy in neighbor_offsets:
+                nx, ny = cx + dx, cy + dy
+
+                if 0 <= nx < width and 0 <= ny < height:
+
+                    if not arrnew[ny, nx]:
+
+                        child_value = int(img_gray[ny, nx])
+
+                        if abs(child_value - parent_value) <= tolerance:
+                            arrnew[ny, nx] = True
+                            new_frontier.add((nx, ny))
+
+        frontier = new_frontier
+
+    makeImage(arrnew, f"regionGrownLocal_{filename}")
+
+    merged = doEmThreeCheckEd(arrnew, s1x, s1y, s2x, s2y)
+
+    if merged:
+        print("The regions merged")
+    else:
+        print("The regions cannot merge")
+
+    return merged
+
 if len(sys.argv) == 1:
     print("No command line parameters given.\n")
     sys.exit()
@@ -336,3 +450,7 @@ elif command == '--m3o':
     #doRegionGrowingMultiSeeds(filenamen)
 elif command == '--regrow2':
     doRegionGrowingMultiSeedsCheck(filenamen)
+elif command == '--regrowg':
+    doRegionGrowingMultiSeedsCheckGrayscale(filenamen,int(param))
+elif command == '--regrowl':
+    doRegionGrowingLocal(filenamen,int(param))
