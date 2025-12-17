@@ -18,6 +18,16 @@ def makeImage(arr,name):
     #newIm.show()
     newIm.save(name)
 
+def load_frequency_mask(mask_file, shape):
+    mask = Image.open(mask_file).convert("L")
+    mask = mask.resize((shape[1], shape[0]))
+
+    mask = np.array(mask, dtype=float)
+    mask = mask / 255.0   # 0..1
+
+    return mask
+
+
 def bit_reverse_indices(N):
     bits = int(np.log2(N))
     rev = np.zeros(N, dtype=int)
@@ -59,14 +69,13 @@ def band_cut_filter(F, D1, D2):
     H = ((D < D1) | (D > D2)).astype(float)
     return F * np.fft.fftshift(H)
 
-def directional_high_pass(F, angle, width=0.3):
-    N, M = F.shape
-    U, V, D = frequency_grid(N, M)
+def directional_high_pass(F, mask_file):
+    mask = load_frequency_mask(mask_file, F.shape)
 
-    theta = np.arctan2(V, U)
-    H = np.abs(np.sin(theta - angle)) < width
+    mask = np.fft.fftshift(mask)
 
-    return F * np.fft.fftshift(H.astype(float))
+    return F * mask
+
 
 def phase_modifying_filter(F, phase_shift):
     return F * np.exp(1j * phase_shift)
@@ -241,3 +250,44 @@ if command == '--IFFT':
     F = fft2_dif(img)
     img_rec = ifft2_dif(F)
     makeImage(np.real(img_rec), "fftReconstructed.bmp")
+if command =='F1':
+    img = makeArray(filenamen)
+    F = fft2_dif(img)
+
+    F_lp = low_pass_filter(F, D0=40)
+
+    img_lp = ifft2_dif(F_lp)
+    makeImage(np.real(img_lp), "F1_lowpass.bmp")
+if command =='F2':
+    img = makeArray(filenamen)
+    F = fft2_dif(img)
+    F_hp = high_pass_filter(F, D0=40)
+
+    img_hp = ifft2_dif(F_hp)
+    makeImage(np.real(img_hp), "F2_highpass.bmp")
+if command =='F3':
+    img = makeArray(filenamen)
+    F = fft2_dif(img)
+    F_bp = band_pass_filter(F, D1=20, D2=60)
+
+    img_bp = ifft2_dif(F_bp)
+    makeImage(np.real(img_bp), "F3_bandpass.bmp")
+if command =='F4':
+    img = makeArray(filenamen)
+    F = fft2_dif(img)
+    F_bc = band_cut_filter(F, D1=20, D2=60)
+
+    img_bc = ifft2_dif(F_bc)
+    makeImage(np.real(img_bc), "F4_bandcut.bmp")
+if command =='F5':
+    img = makeArray(filenamen)
+    F = fft2_dif(img)
+    F_f5 = directional_high_pass(F, "F5mask1.png")
+    img_out = ifft2_dif(F_f5)
+    makeImage(np.real(img_out), "F5_result.bmp")
+if command =='F6':
+    img = makeArray(filenamen)
+    F = fft2_dif(img)
+    F_pm = phase_modifying_filter(F, phase_shift=np.pi / 4)
+    img_pm = ifft2_dif(F_pm)
+    makeImage(np.real(img_pm), "F6_phase.bmp")
