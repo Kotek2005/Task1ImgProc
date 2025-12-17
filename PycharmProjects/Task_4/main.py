@@ -77,8 +77,19 @@ def directional_high_pass(F, mask_file):
     return F * mask
 
 
-def phase_modifying_filter(F, phase_shift):
-    return F * np.exp(1j * phase_shift)
+def phase_modifying_filter(N, M, k, l):
+    n = np.arange(N).reshape(N, 1)
+    m = np.arange(M).reshape(1, M)
+
+    P = np.exp(
+        1j * (
+            -n * k * 2*np.pi / N
+            -m * l * 2*np.pi / M
+            + (k + l) * np.pi
+        )
+    )
+    return P
+
 
 
 def dft1d(x):
@@ -119,6 +130,23 @@ def fft_dif_1d(x):
 
     return X[bit_reverse_indices(N)]
 
+def fft2_dif(img):
+    img = np.asarray(img, dtype=complex)
+    N, M = img.shape
+
+    if (N & (N - 1)) or (M & (M - 1)):
+        raise ValueError("Image dimensions must be powers of 2")
+
+    F = img.copy()
+
+    for i in range(N):
+        F[i, :] = fft_dif_1d(F[i, :])
+
+    for j in range(M):
+        F[:, j] = fft_dif_1d(F[:, j])
+
+    return F
+
 def ifft_dif_1d(X):
     X = np.asarray(X, dtype=complex)
     N = X.shape[0]
@@ -145,23 +173,6 @@ def ifft_dif_1d(X):
 
     x = x[bit_reverse_indices(N)]
     return x / N
-
-def fft2_dif(img):
-    img = np.asarray(img, dtype=complex)
-    N, M = img.shape
-
-    if (N & (N - 1)) or (M & (M - 1)):
-        raise ValueError("Image dimensions must be powers of 2")
-
-    F = img.copy()
-
-    for i in range(N):
-        F[i, :] = fft_dif_1d(F[i, :])
-
-    for j in range(M):
-        F[:, j] = fft_dif_1d(F[:, j])
-
-    return F
 
 def ifft2_dif(F):
     F = np.asarray(F, dtype=complex)
@@ -229,6 +240,9 @@ def save_fft_spectrum(F, name="fft_spectrum.bmp"):
 
 command = sys.argv[1]
 filenamen = sys.argv[2]
+k = int(sys.argv[3])
+l =  int(sys.argv[4])
+
 if len(sys.argv) > 3:
     param = sys.argv[3]
 if len(sys.argv) > 4:
@@ -269,14 +283,12 @@ if command =='F3':
     img = makeArray(filenamen)
     F = fft2_dif(img)
     F_bp = band_pass_filter(F, D1=20, D2=60)
-
     img_bp = ifft2_dif(F_bp)
     makeImage(np.real(img_bp), "F3_bandpass.bmp")
 if command =='F4':
     img = makeArray(filenamen)
     F = fft2_dif(img)
     F_bc = band_cut_filter(F, D1=20, D2=60)
-
     img_bc = ifft2_dif(F_bc)
     makeImage(np.real(img_bc), "F4_bandcut.bmp")
 if command =='F5':
@@ -288,6 +300,8 @@ if command =='F5':
 if command =='F6':
     img = makeArray(filenamen)
     F = fft2_dif(img)
-    F_pm = phase_modifying_filter(F, phase_shift=np.pi / 4)
-    img_pm = ifft2_dif(F_pm)
-    makeImage(np.real(img_pm), "F6_phase.bmp")
+    N, M = img.shape
+    P = phase_modifying_filter(N, M, k, l)
+    G = F * P
+    result = np.real(ifft2_dif(G))
+    makeImage(result, "F6_result.bmp")
