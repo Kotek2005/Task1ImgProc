@@ -23,7 +23,7 @@ def load_frequency_mask(mask_file, shape):
     mask = mask.resize((shape[1], shape[0]))
 
     mask = np.array(mask, dtype=float)
-    mask = mask / 255.0   # 0..1
+    mask = mask / 255.0
 
     return mask
 
@@ -240,63 +240,68 @@ def save_fft_spectrum(F, name="fft_spectrum.bmp"):
 
 command = sys.argv[1]
 filenamen = sys.argv[2]
-k = int(sys.argv[3])
-l =  int(sys.argv[4])
-
+k = None
+l = None
 if len(sys.argv) > 3:
-    param = sys.argv[3]
+    k = int(sys.argv[3])
 if len(sys.argv) > 4:
-    param2 = int(sys.argv[4])
+    l = int(sys.argv[4])
 
 if command == '--DFT':
     F = doDFT(filenamen)
     saveDFTSpectrum(F,"spectrumResult.bmp")
+
 if command == '--IFT':
     F = doDFT(filenamen)
     img = doIFT(F)
     makeImage(np.real(img),"resultIFT.bmp")
+
 if command == '--FFT':
     img = makeArray(filenamen)
     F = fft2_dif(img)
     save_fft_spectrum(F, "fftSpectrum.bmp")
+
 if command == '--IFFT':
     img = makeArray(filenamen)
     F = fft2_dif(img)
     img_rec = ifft2_dif(F)
     makeImage(np.real(img_rec), "fftReconstructed.bmp")
+
 if command =='F1':
     img = makeArray(filenamen)
     F = fft2_dif(img)
-
-    F_lp = low_pass_filter(F, D0=40)
-
+    F_lp = low_pass_filter(F, k)
     img_lp = ifft2_dif(F_lp)
     makeImage(np.real(img_lp), "F1_lowpass.bmp")
+
 if command =='F2':
     img = makeArray(filenamen)
     F = fft2_dif(img)
-    F_hp = high_pass_filter(F, D0=40)
-
+    F_hp = high_pass_filter(F, k)
     img_hp = ifft2_dif(F_hp)
     makeImage(np.real(img_hp), "F2_highpass.bmp")
+
 if command =='F3':
     img = makeArray(filenamen)
     F = fft2_dif(img)
-    F_bp = band_pass_filter(F, D1=20, D2=60)
+    F_bp = band_pass_filter(F, k, l)
     img_bp = ifft2_dif(F_bp)
     makeImage(np.real(img_bp), "F3_bandpass.bmp")
+
 if command =='F4':
     img = makeArray(filenamen)
     F = fft2_dif(img)
-    F_bc = band_cut_filter(F, D1=20, D2=60)
+    F_bc = band_cut_filter(F, k, l)
     img_bc = ifft2_dif(F_bc)
     makeImage(np.real(img_bc), "F4_bandcut.bmp")
+
 if command =='F5':
     img = makeArray(filenamen)
     F = fft2_dif(img)
     F_f5 = directional_high_pass(F, "F5mask1.png")
     img_out = ifft2_dif(F_f5)
     makeImage(np.real(img_out), "F5_result.bmp")
+
 if command =='F6':
     img = makeArray(filenamen)
     F = fft2_dif(img)
